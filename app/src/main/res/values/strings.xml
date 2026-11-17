@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Ngekost yuk..!</string>
+    <string name="tagline_indonesia">Cari Kosan, Wisma, Hotel &amp; Kontrakan Se-Indonesia</string>
+    <string name="tagline_global_plan">Segera hadir ekspansi pencarian hunian seluruh dunia</string>
+    <string name="sign_in_with_google">Masuk dengan Google</string>
+    <string name="sign_out">Keluar Akun</string>
+    <string name="nav_explore">Jelajah</string>
+    <string name="nav_favorites">Favorit</string>
+    <string name="nav_upload">Pasang Iklan</string>
+    <string name="nav_my_listings">Usaha Saya</string>
+    <string name="search_hint">Cari kota, nama kos, wisma, hotel...</string>
+    <string name="view_list">Daftar</string>
+    <string name="view_map">Peta</string>
+    <string name="open_in_maps">Buka di Google Maps</string>
+    <string name="contact_whatsapp">Chat WhatsApp</string>
+    <string name="contact_call">Telepon Pemilik</string>
+    <string name="publish_listing">Tayangkan Usaha Sekarang</string>
+    <string name="update_listing">Simpan Perubahan</string>
+    <string name="empty_listings_title">Belum ada hunian yang cocok</string>
+    <string name="empty_listings_desc">Coba ubah filter harga, tipe hunian, atau kata kunci kota lain.</string>
+    <string name="error_generic">Terjadi kendala saat memuat data. Silakan coba lagi.</string>
+</resources>

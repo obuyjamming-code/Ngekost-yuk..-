@@ -1,0 +1,250 @@
+{
+  "entities": {
+    "PropertyListing": {
+      "title": "PropertyListing",
+      "description": "Public accommodation listing (Kosan, Wisma, Hotel, Kontrakan) across Indonesia with boost ranking and global-ready schema.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "ownerDisplayName": { "type": "string" },
+        "title": { "type": "string" },
+        "propertyType": { "type": "string", "enum": ["KOSAN", "WISMA", "HOTEL", "KONTRAKAN"] },
+        "description": { "type": "string" },
+        "priceIdr": { "type": "integer" },
+        "billingPeriod": { "type": "string", "enum": ["PER_BULAN", "PER_MALAM", "PER_TAHUN"] },
+        "countryCode": { "type": "string" },
+        "countryName": { "type": "string" },
+        "province": { "type": "string" },
+        "city": { "type": "string" },
+        "address": { "type": "string" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "contactName": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "contactWhatsapp": { "type": "string" },
+        "facilities": { "type": "array" },
+        "photoUrls": { "type": "array" },
+        "rating": { "type": "number" },
+        "availableRooms": { "type": "integer" },
+        "visibility": { "type": "string", "enum": ["public", "hidden"] },
+        "boostTier": { "type": "string", "enum": ["NONE", "BOOST_7D", "BOOST_30D", "BOOST_90D"] },
+        "featuredRank": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId", "ownerDisplayName", "title", "propertyType", "description",
+        "priceIdr", "billingPeriod", "countryCode", "countryName", "province",
+        "city", "address", "latitude", "longitude", "contactName",
+        "contactPhone", "contactWhatsapp", "facilities", "photoUrls",
+        "rating", "availableRooms", "visibility", "boostTier", "featuredRank",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user profile with promoter referral code.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "preferredRegion": { "type": "string" },
+        "referralCode": { "type": "string" },
+        "referredByCode": { "type": "string" },
+        "referredByUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "displayName", "email", "preferredRegion",
+        "referralCode", "referredByCode", "referredByUid", "createdAt", "updatedAt"
+      ]
+    },
+    "ReferralCodeLookup": {
+      "title": "ReferralCodeLookup",
+      "description": "Non-PII mapping from promoter referral code to promoter UID.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "promoterUid": { "type": "string" },
+        "promoterName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "promoterUid", "promoterName", "createdAt"]
+    },
+    "FavoriteListing": {
+      "title": "FavoriteListing",
+      "description": "User-saved property bookmark.",
+      "type": "object",
+      "properties": {
+        "listingId": { "type": "string" },
+        "title": { "type": "string" },
+        "city": { "type": "string" },
+        "priceIdr": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["listingId", "title", "city", "priceIdr", "createdAt"]
+    },
+    "MonetizationOrder": {
+      "title": "MonetizationOrder",
+      "description": "Boost ad or booking fee order verified by app owner.",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "listingId": { "type": "string" },
+        "listingTitle": { "type": "string" },
+        "orderType": { "type": "string", "enum": ["BOOST_7D", "BOOST_30D", "BOOST_90D", "BOOKING_FEE"] },
+        "propertyPriceIdr": { "type": "integer" },
+        "grossAmountIdr": { "type": "integer" },
+        "promoterCode": { "type": "string" },
+        "promoterUid": { "type": "string" },
+        "promoterFeeRatePercent": { "type": "integer" },
+        "promoterFeeIdr": { "type": "integer" },
+        "ownerNetIdr": { "type": "integer" },
+        "paymentNote": { "type": "string" },
+        "status": { "type": "string", "enum": ["PENDING", "VERIFIED", "REJECTED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "buyerId", "buyerName", "listingId", "listingTitle", "orderType",
+        "propertyPriceIdr", "grossAmountIdr", "promoterCode", "promoterUid",
+        "promoterFeeRatePercent", "promoterFeeIdr", "ownerNetIdr",
+        "paymentNote", "status", "createdAt", "updatedAt"
+      ]
+    },
+    "ReferralCommission": {
+      "title": "ReferralCommission",
+      "description": "Verified promoter fee ledger entry created when owner confirms an order.",
+      "type": "object",
+      "properties": {
+        "promoterUid": { "type": "string" },
+        "promoterCode": { "type": "string" },
+        "orderId": { "type": "string" },
+        "orderTitle": { "type": "string" },
+        "grossOrderIdr": { "type": "integer" },
+        "feePercent": { "type": "integer" },
+        "commissionIdr": { "type": "integer" },
+        "status": { "type": "string", "enum": ["AVAILABLE", "PAID"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "promoterUid", "promoterCode", "orderId", "orderTitle",
+        "grossOrderIdr", "feePercent", "commissionIdr", "status",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "PayoutRequest": {
+      "title": "PayoutRequest",
+      "description": "Promoter fee withdrawal request reviewed by app owner.",
+      "type": "object",
+      "properties": {
+        "promoterUid": { "type": "string" },
+        "promoterName": { "type": "string" },
+        "promoterCode": { "type": "string" },
+        "amountIdr": { "type": "integer" },
+        "payoutMethod": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "accountHolder": { "type": "string" },
+        "status": { "type": "string", "enum": ["REQUESTED", "PAID", "REJECTED"] },
+        "adminNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "promoterUid", "promoterName", "promoterCode", "amountIdr",
+        "payoutMethod", "accountNumber", "accountHolder", "status",
+        "adminNote", "createdAt", "updatedAt"
+      ]
+    },
+    "OwnerConfig": {
+      "title": "OwnerConfig",
+      "description": "Owner pricing, fee rates, and payment destination.",
+      "type": "object",
+      "properties": {
+        "configKey": { "type": "string" },
+        "bankName": { "type": "string" },
+        "bankAccountNumber": { "type": "string" },
+        "bankAccountHolder": { "type": "string" },
+        "boost7dIdr": { "type": "integer" },
+        "boost30dIdr": { "type": "integer" },
+        "boost90dIdr": { "type": "integer" },
+        "bookingFeePercent": { "type": "integer" },
+        "promoterFeePercent": { "type": "integer" },
+        "promoterProFeePercent": { "type": "integer" },
+        "minWithdrawIdr": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "configKey", "bankName", "bankAccountNumber", "bankAccountHolder",
+        "boost7dIdr", "boost30dIdr", "boost90dIdr", "bookingFeePercent",
+        "promoterFeePercent", "promoterProFeePercent", "minWithdrawIdr", "updatedAt"
+      ]
+    },
+    "MusicTrack": {
+      "title": "MusicTrack",
+      "description": "Obuy Jamming music track metadata across YouTube, Spotify, and Meta.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "artist": { "type": "string" },
+        "genre": { "type": "string" },
+        "durationLabel": { "type": "string" },
+        "youtubeUrl": { "type": "string" },
+        "spotifyUrl": { "type": "string" },
+        "metaUrl": { "type": "string" },
+        "embedUrl": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "visibility": { "type": "string", "enum": ["public", "hidden"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "title", "artist", "genre", "durationLabel", "youtubeUrl",
+        "spotifyUrl", "metaUrl", "embedUrl", "sortOrder", "visibility",
+        "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/listings/{listingId}": {
+      "schema": { "$ref": "#/entities/PropertyListing" },
+      "description": "Publicly searchable properties."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profiles."
+    },
+    "/referral_codes/{code}": {
+      "schema": { "$ref": "#/entities/ReferralCodeLookup" },
+      "description": "Public referral code lookup without PII."
+    },
+    "/users/{userId}/favorites/{listingId}": {
+      "schema": { "$ref": "#/entities/FavoriteListing" },
+      "description": "User saved bookmarks."
+    },
+    "/monetization_orders/{orderId}": {
+      "schema": { "$ref": "#/entities/MonetizationOrder" },
+      "description": "Boost and booking fee orders."
+    },
+    "/referral_commissions/{commissionId}": {
+      "schema": { "$ref": "#/entities/ReferralCommission" },
+      "description": "Promoter fee ledger."
+    },
+    "/payout_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/PayoutRequest" },
+      "description": "Promoter payout requests."
+    },
+    "/owner_config/{configId}": {
+      "schema": { "$ref": "#/entities/OwnerConfig" },
+      "description": "Pricing and payout account settings."
+    },
+    "/music_tracks/{trackId}": {
+      "schema": { "$ref": "#/entities/MusicTrack" },
+      "description": "Obuy Jamming playlist tracks."
+    }
+  }
+}

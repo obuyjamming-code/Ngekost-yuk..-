@@ -1,0 +1,463 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened global primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Bootstrapped App Owner check (requires verified Google email token)
+    function isAppOwner() {
+      return isSignedIn() &&
+             request.auth.token.email == 'obuyjamming@gmail.com' &&
+             request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidPhotoEntry(entry) {
+      return entry is string && entry.size() >= 5 && entry.size() <= 350000;
+    }
+
+    function isValidListing(data) {
+      return data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+             data.ownerDisplayName is string && data.ownerDisplayName.size() >= 1 && data.ownerDisplayName.size() <= 80 &&
+             data.title is string && data.title.size() >= 3 && data.title.size() <= 100 &&
+             data.propertyType in ['KOSAN', 'WISMA', 'HOTEL', 'KONTRAKAN'] &&
+             data.description is string && data.description.size() >= 10 && data.description.size() <= 1500 &&
+             data.priceIdr is int && data.priceIdr >= 50000 && data.priceIdr <= 500000000 &&
+             data.billingPeriod in ['PER_BULAN', 'PER_MALAM', 'PER_TAHUN'] &&
+             data.countryCode is string && data.countryCode.size() >= 2 && data.countryCode.size() <= 4 &&
+             data.countryName is string && data.countryName.size() >= 2 && data.countryName.size() <= 60 &&
+             data.province is string && data.province.size() >= 2 && data.province.size() <= 60 &&
+             data.city is string && data.city.size() >= 2 && data.city.size() <= 60 &&
+             data.address is string && data.address.size() >= 5 && data.address.size() <= 250 &&
+             (data.latitude is float || data.latitude is int) && data.latitude >= -90.0 && data.latitude <= 90.0 &&
+             (data.longitude is float || data.longitude is int) && data.longitude >= -180.0 && data.longitude <= 180.0 &&
+             data.contactName is string && data.contactName.size() >= 2 && data.contactName.size() <= 80 &&
+             data.contactPhone is string && data.contactPhone.size() >= 8 && data.contactPhone.size() <= 25 &&
+             data.contactWhatsapp is string && data.contactWhatsapp.size() >= 8 && data.contactWhatsapp.size() <= 25 &&
+             data.facilities is list && data.facilities.size() <= 15 &&
+             (data.facilities.size() == 0 || (data.facilities[0] is string && data.facilities[0].size() <= 40)) &&
+             data.photoUrls is list && data.photoUrls.size() >= 1 && data.photoUrls.size() <= 4 &&
+             isValidPhotoEntry(data.photoUrls[0]) &&
+             (data.photoUrls.size() < 2 || isValidPhotoEntry(data.photoUrls[1])) &&
+             (data.photoUrls.size() < 3 || isValidPhotoEntry(data.photoUrls[2])) &&
+             (data.photoUrls.size() < 4 || isValidPhotoEntry(data.photoUrls[3])) &&
+             (data.rating is float || data.rating is int) && data.rating >= 0.0 && data.rating <= 5.0 &&
+             data.availableRooms is int && data.availableRooms >= 0 && data.availableRooms <= 500 &&
+             data.visibility in ['public', 'hidden'] &&
+             data.boostTier in ['NONE', 'BOOST_7D', 'BOOST_30D', 'BOOST_90D'] &&
+             data.featuredRank is int && data.featuredRank >= 0 && data.featuredRank <= 10 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.email is string && data.email.size() >= 3 && data.email.size() <= 120 &&
+             data.preferredRegion is string && data.preferredRegion.size() >= 1 && data.preferredRegion.size() <= 60 &&
+             data.referralCode is string && data.referralCode.size() >= 4 && data.referralCode.size() <= 20 &&
+             data.referredByCode is string && data.referredByCode.size() <= 20 &&
+             data.referredByUid is string && data.referredByUid.size() <= 128 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidReferralLookup(data) {
+      return data.code is string && data.code.size() >= 4 && data.code.size() <= 20 &&
+             data.promoterUid is string && data.promoterUid.size() >= 1 && data.promoterUid.size() <= 128 &&
+             data.promoterName is string && data.promoterName.size() >= 1 && data.promoterName.size() <= 80 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidFavoriteListing(data) {
+      return data.listingId is string && data.listingId.size() >= 1 && data.listingId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.city is string && data.city.size() >= 1 && data.city.size() <= 60 &&
+             data.priceIdr is int && data.priceIdr >= 0 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidMonetizationOrder(data) {
+      return data.buyerId is string && data.buyerId.size() >= 1 && data.buyerId.size() <= 128 &&
+             data.buyerName is string && data.buyerName.size() >= 1 && data.buyerName.size() <= 80 &&
+             data.listingId is string && data.listingId.size() >= 1 && data.listingId.size() <= 128 &&
+             data.listingTitle is string && data.listingTitle.size() >= 1 && data.listingTitle.size() <= 100 &&
+             data.orderType in ['BOOST_7D', 'BOOST_30D', 'BOOST_90D', 'BOOKING_FEE'] &&
+             data.propertyPriceIdr is int && data.propertyPriceIdr >= 0 && data.propertyPriceIdr <= 500000000 &&
+             data.grossAmountIdr is int && data.grossAmountIdr >= 10000 && data.grossAmountIdr <= 50000000 &&
+             data.promoterCode is string && data.promoterCode.size() <= 20 &&
+             data.promoterUid is string && data.promoterUid.size() <= 128 &&
+             data.promoterFeeRatePercent is int && data.promoterFeeRatePercent >= 0 && data.promoterFeeRatePercent <= 50 &&
+             data.promoterFeeIdr is int && data.promoterFeeIdr >= 0 && data.promoterFeeIdr <= data.grossAmountIdr &&
+             data.ownerNetIdr is int && data.ownerNetIdr >= 0 &&
+             (data.ownerNetIdr + data.promoterFeeIdr) == data.grossAmountIdr &&
+             data.paymentNote is string && data.paymentNote.size() <= 200 &&
+             data.status in ['PENDING', 'VERIFIED', 'REJECTED'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidReferralCommission(data) {
+      return data.promoterUid is string && data.promoterUid.size() >= 1 && data.promoterUid.size() <= 128 &&
+             data.promoterCode is string && data.promoterCode.size() >= 4 && data.promoterCode.size() <= 20 &&
+             data.orderId is string && data.orderId.size() >= 1 && data.orderId.size() <= 128 &&
+             data.orderTitle is string && data.orderTitle.size() >= 1 && data.orderTitle.size() <= 120 &&
+             data.grossOrderIdr is int && data.grossOrderIdr >= 10000 &&
+             data.feePercent is int && data.feePercent >= 1 && data.feePercent <= 50 &&
+             data.commissionIdr is int && data.commissionIdr >= 1000 && data.commissionIdr <= data.grossOrderIdr &&
+             data.status in ['AVAILABLE', 'PAID'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPayoutRequest(data) {
+      return data.promoterUid is string && data.promoterUid.size() >= 1 && data.promoterUid.size() <= 128 &&
+             data.promoterName is string && data.promoterName.size() >= 1 && data.promoterName.size() <= 80 &&
+             data.promoterCode is string && data.promoterCode.size() >= 4 && data.promoterCode.size() <= 20 &&
+             data.amountIdr is int && data.amountIdr >= 50000 && data.amountIdr <= 100000000 &&
+             data.payoutMethod is string && data.payoutMethod.size() >= 2 && data.payoutMethod.size() <= 30 &&
+             data.accountNumber is string && data.accountNumber.size() >= 4 && data.accountNumber.size() <= 40 &&
+             data.accountHolder is string && data.accountHolder.size() >= 2 && data.accountHolder.size() <= 80 &&
+             data.status in ['REQUESTED', 'PAID', 'REJECTED'] &&
+             data.adminNote is string && data.adminNote.size() <= 200 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidOwnerConfig(data) {
+      return data.configKey == 'pricing' &&
+             data.bankName is string && data.bankName.size() >= 2 && data.bankName.size() <= 40 &&
+             data.bankAccountNumber is string && data.bankAccountNumber.size() >= 4 && data.bankAccountNumber.size() <= 40 &&
+             data.bankAccountHolder is string && data.bankAccountHolder.size() >= 2 && data.bankAccountHolder.size() <= 80 &&
+             data.boost7dIdr is int && data.boost7dIdr >= 10000 && data.boost7dIdr <= 10000000 &&
+             data.boost30dIdr is int && data.boost30dIdr >= 10000 && data.boost30dIdr <= 20000000 &&
+             data.boost90dIdr is int && data.boost90dIdr >= 10000 && data.boost90dIdr <= 50000000 &&
+             data.bookingFeePercent is int && data.bookingFeePercent >= 1 && data.bookingFeePercent <= 25 &&
+             data.promoterFeePercent is int && data.promoterFeePercent >= 5 && data.promoterFeePercent <= 40 &&
+             data.promoterProFeePercent is int && data.promoterProFeePercent >= data.promoterFeePercent && data.promoterProFeePercent <= 50 &&
+             data.minWithdrawIdr is int && data.minWithdrawIdr >= 10000 && data.minWithdrawIdr <= 1000000 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidMusicTrack(data) {
+      return data.title is string && data.title.size() >= 2 && data.title.size() <= 100 &&
+             data.artist is string && data.artist.size() >= 2 && data.artist.size() <= 80 &&
+             data.genre is string && data.genre.size() >= 2 && data.genre.size() <= 40 &&
+             data.durationLabel is string && data.durationLabel.size() >= 2 && data.durationLabel.size() <= 20 &&
+             data.youtubeUrl is string && data.youtubeUrl.size() >= 8 && data.youtubeUrl.size() <= 300 &&
+             data.spotifyUrl is string && data.spotifyUrl.size() >= 8 && data.spotifyUrl.size() <= 300 &&
+             data.metaUrl is string && data.metaUrl.size() >= 8 && data.metaUrl.size() <= 300 &&
+             data.embedUrl is string && data.embedUrl.size() <= 300 &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 1000 &&
+             data.visibility in ['public', 'hidden'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 1. Accommodation Marketplace Listings
+    match /listings/{listingId} {
+      allow get: if isSignedIn() && isValidId(listingId) &&
+                    (existing().visibility == 'public' || existing().ownerId == request.auth.uid || isAppOwner());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.visibility == 'public' || resource.data.ownerId == request.auth.uid || isAppOwner());
+
+      allow create: if isSignedIn() &&
+                       isValidId(listingId) &&
+                       incoming().ownerId == request.auth.uid &&
+                       incoming().boostTier == 'NONE' &&
+                       incoming().featuredRank == 0 &&
+                       incoming().keys().hasAll([
+                         'ownerId', 'ownerDisplayName', 'title', 'propertyType', 'description',
+                         'priceIdr', 'billingPeriod', 'countryCode', 'countryName', 'province',
+                         'city', 'address', 'latitude', 'longitude', 'contactName',
+                         'contactPhone', 'contactWhatsapp', 'facilities', 'photoUrls',
+                         'rating', 'availableRooms', 'visibility', 'boostTier', 'featuredRank',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'ownerId', 'ownerDisplayName', 'title', 'propertyType', 'description',
+                         'priceIdr', 'billingPeriod', 'countryCode', 'countryName', 'province',
+                         'city', 'address', 'latitude', 'longitude', 'contactName',
+                         'contactPhone', 'contactWhatsapp', 'facilities', 'photoUrls',
+                         'rating', 'availableRooms', 'visibility', 'boostTier', 'featuredRank',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidListing(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(listingId) &&
+                       isValidListing(incoming()) &&
+                       incoming().ownerId == existing().ownerId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().countryCode == existing().countryCode &&
+                       incoming().countryName == existing().countryName &&
+                       (
+                         (existing().ownerId == request.auth.uid &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'title', 'propertyType', 'description', 'priceIdr', 'billingPeriod',
+                            'province', 'city', 'address', 'latitude', 'longitude',
+                            'contactName', 'contactPhone', 'contactWhatsapp', 'facilities',
+                            'photoUrls', 'availableRooms', 'visibility', 'updatedAt'
+                          ])) ||
+                         (isAppOwner() &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'boostTier', 'featuredRank', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if isSignedIn() && isValidId(listingId) &&
+                       (existing().ownerId == request.auth.uid || isAppOwner());
+    }
+
+    // 2. Private User Profile & Favorites
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'email', 'preferredRegion',
+                         'referralCode', 'referredByCode', 'referredByUid', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'email', 'preferredRegion',
+                         'referralCode', 'referredByCode', 'referredByUid', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().referralCode == existing().referralCode &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'preferredRegion', 'referredByCode', 'referredByUid', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /favorites/{listingId} {
+        allow get: if isOwner(userId) && isValidId(listingId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(listingId) &&
+                         incoming().listingId == listingId &&
+                         incoming().keys().hasAll(['listingId', 'title', 'city', 'priceIdr', 'createdAt']) &&
+                         incoming().keys().hasOnly(['listingId', 'title', 'city', 'priceIdr', 'createdAt']) &&
+                         isValidFavoriteListing(incoming());
+
+        allow update: if false;
+
+        allow delete: if isOwner(userId) && isValidId(listingId);
+      }
+    }
+
+    // 3. Zero-PII Referral Code Lookup
+    match /referral_codes/{code} {
+      allow get: if isSignedIn() && isValidId(code);
+      allow list: if isSignedIn() && (resource.data.promoterUid == request.auth.uid || isAppOwner());
+
+      allow create: if isSignedIn() &&
+                       isValidId(code) &&
+                       incoming().code == code &&
+                       incoming().promoterUid == request.auth.uid &&
+                       incoming().keys().hasAll(['code', 'promoterUid', 'promoterName', 'createdAt']) &&
+                       incoming().keys().hasOnly(['code', 'promoterUid', 'promoterName', 'createdAt']) &&
+                       isValidReferralLookup(incoming());
+
+      allow update, delete: if false;
+    }
+
+    // 4. Monetization Orders (Boost Ads & Booking Platform Fees)
+    match /monetization_orders/{orderId} {
+      allow get: if isSignedIn() && isValidId(orderId) &&
+                    (existing().buyerId == request.auth.uid || isAppOwner());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.buyerId == request.auth.uid || isAppOwner());
+
+      allow create: if isSignedIn() &&
+                       isValidId(orderId) &&
+                       incoming().buyerId == request.auth.uid &&
+                       incoming().status == 'PENDING' &&
+                       incoming().keys().hasAll([
+                         'buyerId', 'buyerName', 'listingId', 'listingTitle', 'orderType',
+                         'propertyPriceIdr', 'grossAmountIdr', 'promoterCode', 'promoterUid',
+                         'promoterFeeRatePercent', 'promoterFeeIdr', 'ownerNetIdr',
+                         'paymentNote', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'buyerId', 'buyerName', 'listingId', 'listingTitle', 'orderType',
+                         'propertyPriceIdr', 'grossAmountIdr', 'promoterCode', 'promoterUid',
+                         'promoterFeeRatePercent', 'promoterFeeIdr', 'ownerNetIdr',
+                         'paymentNote', 'status', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidMonetizationOrder(incoming());
+
+      allow update: if isAppOwner() &&
+                       isValidId(orderId) &&
+                       isValidMonetizationOrder(incoming()) &&
+                       existing().status == 'PENDING' &&
+                       incoming().status in ['VERIFIED', 'REJECTED'] &&
+                       incoming().buyerId == existing().buyerId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if isAppOwner() && isValidId(orderId);
+    }
+
+    // 5. Promoter Referral Commissions (Written strictly by App Owner)
+    match /referral_commissions/{commissionId} {
+      allow get: if isSignedIn() && isValidId(commissionId) &&
+                    (existing().promoterUid == request.auth.uid || isAppOwner());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.promoterUid == request.auth.uid || isAppOwner());
+
+      allow create: if isAppOwner() &&
+                       isValidId(commissionId) &&
+                       incoming().status == 'AVAILABLE' &&
+                       incoming().keys().hasAll([
+                         'promoterUid', 'promoterCode', 'orderId', 'orderTitle',
+                         'grossOrderIdr', 'feePercent', 'commissionIdr', 'status',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'promoterUid', 'promoterCode', 'orderId', 'orderTitle',
+                         'grossOrderIdr', 'feePercent', 'commissionIdr', 'status',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidReferralCommission(incoming());
+
+      allow update: if isAppOwner() &&
+                       isValidId(commissionId) &&
+                       isValidReferralCommission(incoming()) &&
+                       existing().status == 'AVAILABLE' &&
+                       incoming().status == 'PAID' &&
+                       incoming().promoterUid == existing().promoterUid &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // 6. Promoter Payout Requests
+    match /payout_requests/{requestId} {
+      allow get: if isSignedIn() && isValidId(requestId) &&
+                    (existing().promoterUid == request.auth.uid || isAppOwner());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.promoterUid == request.auth.uid || isAppOwner());
+
+      allow create: if isSignedIn() &&
+                       isValidId(requestId) &&
+                       incoming().promoterUid == request.auth.uid &&
+                       incoming().status == 'REQUESTED' &&
+                       incoming().keys().hasAll([
+                         'promoterUid', 'promoterName', 'promoterCode', 'amountIdr',
+                         'payoutMethod', 'accountNumber', 'accountHolder', 'status',
+                         'adminNote', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'promoterUid', 'promoterName', 'promoterCode', 'amountIdr',
+                         'payoutMethod', 'accountNumber', 'accountHolder', 'status',
+                         'adminNote', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPayoutRequest(incoming());
+
+      allow update: if isAppOwner() &&
+                       isValidId(requestId) &&
+                       isValidPayoutRequest(incoming()) &&
+                       existing().status == 'REQUESTED' &&
+                       incoming().status in ['PAID', 'REJECTED'] &&
+                       incoming().promoterUid == existing().promoterUid &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt']);
+
+      allow delete: if false;
+    }
+
+    // 7. Owner Pricing & Payment Settings (Public read, App Owner write)
+    match /owner_config/{configId} {
+      allow get: if isSignedIn() && isValidId(configId);
+      allow list: if isSignedIn() && resource.data.configKey == 'pricing';
+
+      allow create, update: if isAppOwner() &&
+                               isValidId(configId) &&
+                               incoming().keys().hasAll([
+                                 'configKey', 'bankName', 'bankAccountNumber', 'bankAccountHolder',
+                                 'boost7dIdr', 'boost30dIdr', 'boost90dIdr', 'bookingFeePercent',
+                                 'promoterFeePercent', 'promoterProFeePercent', 'minWithdrawIdr', 'updatedAt'
+                               ]) &&
+                               incoming().keys().hasOnly([
+                                 'configKey', 'bankName', 'bankAccountNumber', 'bankAccountHolder',
+                                 'boost7dIdr', 'boost30dIdr', 'boost90dIdr', 'bookingFeePercent',
+                                 'promoterFeePercent', 'promoterProFeePercent', 'minWithdrawIdr', 'updatedAt'
+                               ]) &&
+                               isValidOwnerConfig(incoming());
+
+      allow delete: if false;
+    }
+
+    // 8. Obuy Jamming Music Tracks (Public read, App Owner write)
+    match /music_tracks/{trackId} {
+      allow get: if isSignedIn() && isValidId(trackId) &&
+                    (existing().visibility == 'public' || isAppOwner());
+
+      allow list: if isSignedIn() &&
+                     (resource.data.visibility == 'public' || isAppOwner());
+
+      allow create: if isAppOwner() &&
+                       isValidId(trackId) &&
+                       incoming().keys().hasAll([
+                         'title', 'artist', 'genre', 'durationLabel', 'youtubeUrl',
+                         'spotifyUrl', 'metaUrl', 'embedUrl', 'sortOrder', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'title', 'artist', 'genre', 'durationLabel', 'youtubeUrl',
+                         'spotifyUrl', 'metaUrl', 'embedUrl', 'sortOrder', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidMusicTrack(incoming());
+
+      allow update: if isAppOwner() &&
+                       isValidId(trackId) &&
+                       isValidMusicTrack(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'artist', 'genre', 'durationLabel', 'youtubeUrl',
+                         'spotifyUrl', 'metaUrl', 'embedUrl', 'sortOrder', 'visibility', 'updatedAt'
+                       ]);
+
+      allow delete: if isAppOwner() && isValidId(trackId);
+    }
+  }
+}

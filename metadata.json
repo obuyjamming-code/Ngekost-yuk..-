@@ -1,0 +1,6 @@
+{
+  "name": "Ngekost yuk..!",
+  "description": "Aplikasi pencarian kosan, wisma, hotel, dan kontrakan di seluruh Indonesia dari harga termurah hingga mewah, lengkap dengan peta lokasi, foto bangunan, kontak pemilik, dan fitur publik untuk mengunggah iklan properti.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
